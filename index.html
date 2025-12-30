@@ -38,8 +38,6 @@ h1 {
   margin-top: 12px;
 }
 .row-header {
-  display: flex;
-  justify-content: space-between;
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -54,20 +52,10 @@ input[type="number"] {
   width: 90px;
   font-size: 16px;
 }
-button {
-  width: 100%;
-  margin-top: 20px;
-  font-size: 18px;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #007aff;
-  color: white;
-}
 .result {
   margin-top: 20px;
   text-align: center;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: bold;
 }
 .detail {
@@ -77,6 +65,12 @@ button {
   padding: 12px;
   border-radius: 10px;
 }
+
+/* 視覚強化 */
+.hit-high { color: #007aff; }   /* 100%+ */
+.hit-mid  { color: #34c759; }   /* 50-99 */
+.hit-low  { color: #ff9500; }   /* 1-49 */
+.hit-zero { color: #ff3b30; }   /* 0以下 */
 </style>
 </head>
 
@@ -89,7 +83,7 @@ button {
     <h2>命中計算</h2>
 
     <div class="row">
-      <div class="row-header"><span>器用さ</span></div>
+      <div class="row-header">器用さ</div>
       <div class="inputs">
         <input type="range" min="0" max="1000" id="dexR">
         <input type="number" min="0" max="1000" id="dexN">
@@ -97,7 +91,7 @@ button {
     </div>
 
     <div class="row">
-      <div class="row-header"><span>運</span></div>
+      <div class="row-header">運</div>
       <div class="inputs">
         <input type="range" min="0" max="1000" id="lukHitR">
         <input type="number" min="0" max="1000" id="lukHitN">
@@ -105,7 +99,7 @@ button {
     </div>
 
     <div class="row">
-      <div class="row-header"><span>命中ボーナス</span></div>
+      <div class="row-header">命中ボーナス</div>
       <div class="inputs">
         <input type="range" min="0" max="300" id="hitBonusR">
         <input type="number" min="0" max="300" id="hitBonusN">
@@ -118,7 +112,7 @@ button {
     <h2>回避計算</h2>
 
     <div class="row">
-      <div class="row-header"><span>素早さ</span></div>
+      <div class="row-header">素早さ</div>
       <div class="inputs">
         <input type="range" min="0" max="300" id="agiR">
         <input type="number" min="0" max="300" id="agiN">
@@ -126,7 +120,7 @@ button {
     </div>
 
     <div class="row">
-      <div class="row-header"><span>運</span></div>
+      <div class="row-header">運</div>
       <div class="inputs">
         <input type="range" min="0" max="1000" id="lukEvaR">
         <input type="number" min="0" max="1000" id="lukEvaN">
@@ -134,7 +128,7 @@ button {
     </div>
 
     <div class="row">
-      <div class="row-header"><span>回避ボーナス</span></div>
+      <div class="row-header">回避ボーナス</div>
       <div class="inputs">
         <input type="range" min="0" max="300" id="evaBonusR">
         <input type="number" min="0" max="300" id="evaBonusN">
@@ -142,49 +136,56 @@ button {
     </div>
   </div>
 
-  <button onclick="calculate()">計算</button>
-
-  <div class="result" id="result">命中率：-</div>
+  <div class="result" id="result">命中率：0</div>
   <div class="detail" id="detail"></div>
 </div>
 
 <script>
-function sync(range, number) {
-  range.addEventListener("input", () => number.value = range.value);
-  number.addEventListener("input", () => range.value = number.value);
+function bind(range, number) {
+  const sync = () => {
+    number.value = range.value;
+    calculate();
+  };
+  range.addEventListener("input", sync);
+  number.addEventListener("input", () => {
+    range.value = number.value;
+    calculate();
+  });
 }
 
-sync(dexR, dexN);
-sync(lukHitR, lukHitN);
-sync(hitBonusR, hitBonusN);
-sync(agiR, agiN);
-sync(lukEvaR, lukEvaN);
-sync(evaBonusR, evaBonusN);
+bind(dexR, dexN);
+bind(lukHitR, lukHitN);
+bind(hitBonusR, hitBonusN);
+bind(agiR, agiN);
+bind(lukEvaR, lukEvaN);
+bind(evaBonusR, evaBonusN);
 
 function calculate() {
-  const dex = Number(dexN.value);
-  const lukHit = Number(lukHitN.value);
-  const hitBonus = Number(hitBonusN.value);
-  const agi = Number(agiN.value);
-  const lukEva = Number(lukEvaN.value);
-  const evaBonus = Number(evaBonusN.value);
+  const dex = +dexN.value;
+  const lukHit = +lukHitN.value;
+  const hitBonus = +hitBonusN.value;
+  const agi = +agiN.value;
+  const lukEva = +lukEvaN.value;
+  const evaBonus = +evaBonusN.value;
 
   const hitBase =
     ((11 * Math.pow(dex, 0.20)) / 20 +
-     Math.pow(lukHit, 0.96) / 200 -
-     1) * 100;
+     Math.pow(lukHit, 0.96) / 200 - 1) * 100;
 
   const evadeBase =
     ((11 * Math.pow(agi, 0.90)) / 1000 +
-     Math.pow(lukEva, 0.96) / 200 -
-     1) * 100;
+     Math.pow(lukEva, 0.96) / 200 - 1) * 100;
 
   const hit = hitBase + hitBonus;
   const evade = evadeBase + evaBonus;
+  const acc = Math.floor(hit - evade);
 
-  const accuracy = Math.floor(hit - evade);
-
-  result.textContent = `命中率：${accuracy}`;
+  result.textContent = `命中率：${acc}`;
+  result.className = "result " +
+    (acc >= 100 ? "hit-high" :
+     acc >= 50  ? "hit-mid"  :
+     acc > 0    ? "hit-low"  :
+                  "hit-zero");
 
   detail.innerHTML = `
     <b>内訳</b><br>
@@ -194,6 +195,9 @@ function calculate() {
     回避（合計）：${evade.toFixed(2)}
   `;
 }
+
+// 初期計算
+calculate();
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
