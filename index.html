@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFBE幻影戦争 命中率計算</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f2f2f7;
+  margin: 0;
+  padding: 16px;
+}
+.container {
+  max-width: 440px;
+  margin: auto;
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+}
+h1 {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.section {
+  margin-top: 20px;
+}
+.section h2 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.row {
+  margin-top: 12px;
+}
+.row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.inputs {
+  display: flex;
+  gap: 8px;
+}
+input[type="range"] {
+  flex: 1;
+}
+input[type="number"] {
+  width: 90px;
+  font-size: 16px;
+}
+button {
+  width: 100%;
+  margin-top: 20px;
+  font-size: 18px;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #007aff;
+  color: white;
+}
+.result {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: bold;
+}
+.detail {
+  margin-top: 16px;
+  font-size: 14px;
+  background: #f9f9f9;
+  padding: 12px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>命中率計算</h1>
+
+  <!-- 命中 -->
+  <div class="section">
+    <h2>命中計算</h2>
+
+    <div class="row">
+      <div class="row-header"><span>器用さ</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="1000" id="dexR">
+        <input type="number" min="0" max="1000" id="dexN">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-header"><span>運</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="1000" id="lukHitR">
+        <input type="number" min="0" max="1000" id="lukHitN">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-header"><span>命中ボーナス</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="300" id="hitBonusR">
+        <input type="number" min="0" max="300" id="hitBonusN">
+      </div>
+    </div>
+  </div>
+
+  <!-- 回避 -->
+  <div class="section">
+    <h2>回避計算</h2>
+
+    <div class="row">
+      <div class="row-header"><span>素早さ</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="300" id="agiR">
+        <input type="number" min="0" max="300" id="agiN">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-header"><span>運</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="1000" id="lukEvaR">
+        <input type="number" min="0" max="1000" id="lukEvaN">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-header"><span>回避ボーナス</span></div>
+      <div class="inputs">
+        <input type="range" min="0" max="300" id="evaBonusR">
+        <input type="number" min="0" max="300" id="evaBonusN">
+      </div>
+    </div>
+  </div>
+
+  <button onclick="calculate()">計算</button>
+
+  <div class="result" id="result">命中率：-</div>
+  <div class="detail" id="detail"></div>
+</div>
+
+<script>
+function sync(range, number) {
+  range.addEventListener("input", () => number.value = range.value);
+  number.addEventListener("input", () => range.value = number.value);
+}
+
+sync(dexR, dexN);
+sync(lukHitR, lukHitN);
+sync(hitBonusR, hitBonusN);
+sync(agiR, agiN);
+sync(lukEvaR, lukEvaN);
+sync(evaBonusR, evaBonusN);
+
+function calculate() {
+  const dex = Number(dexN.value);
+  const lukHit = Number(lukHitN.value);
+  const hitBonus = Number(hitBonusN.value);
+  const agi = Number(agiN.value);
+  const lukEva = Number(lukEvaN.value);
+  const evaBonus = Number(evaBonusN.value);
+
+  const hitBase =
+    ((11 * Math.pow(dex, 0.20)) / 20 +
+     Math.pow(lukHit, 0.96) / 200 -
+     1) * 100;
+
+  const evadeBase =
+    ((11 * Math.pow(agi, 0.90)) / 1000 +
+     Math.pow(lukEva, 0.96) / 200 -
+     1) * 100;
+
+  const hit = hitBase + hitBonus;
+  const evade = evadeBase + evaBonus;
+
+  const accuracy = Math.floor(hit - evade);
+
+  result.textContent = `命中率：${accuracy}`;
+
+  detail.innerHTML = `
+    <b>内訳</b><br>
+    命中ベース：${hitBase.toFixed(2)}<br>
+    命中（合計）：${hit.toFixed(2)}<br><br>
+    回避ベース：${evadeBase.toFixed(2)}<br>
+    回避（合計）：${evade.toFixed(2)}
+  `;
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+</body>
+</html>
